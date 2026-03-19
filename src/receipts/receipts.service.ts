@@ -35,7 +35,9 @@ export class ReceiptsService {
 
     // 2. Emit an event to RabbitMQ!
     this.rmqClient.emit('receipt_created', savedReceipt).subscribe();
-    console.log(`[RabbitMQ] Emitted 'receipt_created' for ID: ${savedReceipt.receiptId}`);
+    console.log(
+      `[RabbitMQ] Emitted 'receipt_created' for ID: ${savedReceipt.receiptId}`,
+    );
 
     return savedReceipt;
   }

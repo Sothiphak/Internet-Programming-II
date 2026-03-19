@@ -4,13 +4,16 @@ import {
   Injectable,
   NestInterceptor,
 } from '@nestjs/common';
+import { Request } from 'express'; // <-- Added Express import
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const req = context.switchToHttp().getRequest();
+    const ctx = context.switchToHttp();
+    // Explicitly typing the request as an Express Request
+    const req = ctx.getRequest<Request>();
     const { method, url } = req;
 
     const start = Date.now();

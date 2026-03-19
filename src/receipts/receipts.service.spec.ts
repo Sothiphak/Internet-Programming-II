@@ -45,12 +45,15 @@ describe('ReceiptsService', () => {
   describe('findOne', () => {
     it('should return a receipt if the ID exists', async () => {
       // Tell our fake database to return a fake receipt
-      const expectedReceipt = { receiptId: '123', name: 'Test Receipt', price: 10 };
+      const expectedReceipt = {
+        receiptId: '123',
+        name: 'Test Receipt',
+        price: 10,
+      };
       mockReceiptRepo.findOne.mockResolvedValue(expectedReceipt);
 
       // Run the real service method
       const result = await service.findOne('123');
-      
       // Check if it returned what we expect
       expect(result).toEqual(expectedReceipt);
     });

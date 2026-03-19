@@ -1,35 +1,48 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
+import { Request, Response } from 'express'; // <-- Added explicit Express types
 
-@Catch() // Leaving this empty tells NestJS to catch EVERY type of error
+@Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse();
-    const request = ctx.getRequest();
+    // Explicitly tell TypeScript these are Express Requests and Responses
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
 
-    // Default to 500 Internal Server Error
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message: any = 'Internal server error';
+    let message: string | string[] = 'Internal server error';
 
-    // 1. Handle standard NestJS HTTP Exceptions (like your 400 Validation errors)
+    // 1. Handle standard NestJS HTTP Exceptions
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const responseBody = exception.getResponse();
-      message = typeof responseBody === 'string' ? responseBody : (responseBody as any).message || responseBody;
-    } 
+      if (typeof responseBody === 'string') {
+        message = responseBody;
+      } else if (typeof responseBody === 'object' && responseBody !== null) {
+        // Safely typecast the object to avoid the "any" error
+        const parsedBody = responseBody as { message?: string | string[] };
+        message = parsedBody.message || 'Http Error';
+      }
+    }
     // 2. Catch ugly TypeORM / PostgreSQL Errors
     else if (exception instanceof Error) {
-      // Postgres throws code '22P02' for invalid UUID syntax
-      if ((exception as any).code === '22P02' || exception.message.includes('uuid')) {
+      // Safely check for Postgres error codes without using 'any'
+      const dbError = exception as Error & { code?: string };
+      if (dbError.code === '22P02' || exception.message.includes('uuid')) {
         status = HttpStatus.BAD_REQUEST;
         message = 'Invalid UUID format provided in the URL';
       } else {
-        // For development, we'll log the raw error message. In production, you'd hide this!
-        message = exception.message; 
+        message = exception.message;
       }
     }
 
-    // Return a standardized, professional JSON response
+    // Return the formatted response
     response.status(status).json({
       timestamp: new Date().toISOString(),
       path: request.url,
