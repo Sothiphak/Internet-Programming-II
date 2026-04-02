@@ -3,21 +3,25 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ReceiptsModule } from './receipts/receipts.module';
 import { Receipt } from './database/entities/receipts.entity';
+import { NotificationsModule } from './notifications/notifications.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(), // Loads your .env file
+    ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: 'localhost',
       port: 5432,
-      username: 'postgres', // <-- UPDATE THIS
-      password: 'password', // <-- UPDATE THIS
-      database: 'practice2', // <-- UPDATE THIS (make sure this DB exists in PgAdmin/DBeaver!)
+      username: 'postgres',
+      password: 'password',
+      database: 'practice2',
       entities: [Receipt],
-      synchronize: true, // Auto-creates the DB table based on our Entity
+      synchronize: true,
     }),
     ReceiptsModule,
+    NotificationsModule,
+    OrdersModule,
   ],
 })
 export class AppModule {}

@@ -2,7 +2,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('receipts')
 export class Receipt {
-  @PrimaryGeneratedColumn('uuid') // Automatically generates a UUID for id
+  @PrimaryGeneratedColumn('uuid')
   receiptId: string;
 
   @Column({ type: 'timestamp' })

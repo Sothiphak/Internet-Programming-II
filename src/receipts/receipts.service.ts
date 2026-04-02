@@ -1,17 +1,17 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices'; // <-- New import
 import { Receipt } from '../database/entities/receipts.entity';
 import { CreateReceiptDto } from './dto/create-receipt.dto';
 import { UpdateReceiptDto } from './dto/update-receipt.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ReceiptsService {
   constructor(
     @InjectRepository(Receipt)
     private readonly receiptRepo: Repository<Receipt>,
-    @Inject('RECEIPT_SERVICE') private readonly rmqClient: ClientProxy, // <-- Inject RMQ Client
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findAll() {
@@ -25,24 +25,22 @@ export class ReceiptsService {
   }
 
   async create(dto: CreateReceiptDto) {
-    // 1. Create and save the receipt to Postgres
     const receipt = this.receiptRepo.create({
       issuedAt: new Date(dto.issuedAt),
       name: dto.name,
       price: dto.price,
     });
-    const savedReceipt = await this.receiptRepo.save(receipt);
 
-    // 2. Emit an event to RabbitMQ!
-    this.rmqClient.emit('receipt_created', savedReceipt).subscribe();
-    console.log(
-      `[RabbitMQ] Emitted 'receipt_created' for ID: ${savedReceipt.receiptId}`,
-    );
+    const saved = await this.receiptRepo.save(receipt);
 
-    return savedReceipt;
+    this.notifications.notify('receipt_created', {
+      receiptId: saved.receiptId,
+      price: saved.price,
+    });
+
+    return saved;
   }
 
-  // ... keep update() and remove() exactly the same as before ...
   async update(receiptId: string, dto: UpdateReceiptDto) {
     const receipt = await this.findOne(receiptId);
     if (dto.issuedAt !== undefined) receipt.issuedAt = new Date(dto.issuedAt);

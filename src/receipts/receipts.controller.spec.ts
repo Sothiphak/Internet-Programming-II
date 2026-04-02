@@ -5,7 +5,6 @@ import { ReceiptsService } from './receipts.service';
 describe('ReceiptsController', () => {
   let controller: ReceiptsController;
 
-  // Create a fake service with empty spy functions
   const mockReceiptsService = {
     findAll: jest.fn(),
     findOne: jest.fn(),
@@ -19,8 +18,8 @@ describe('ReceiptsController', () => {
       controllers: [ReceiptsController],
       providers: [
         {
-          provide: ReceiptsService, // Whenever the controller asks for the service...
-          useValue: mockReceiptsService, // ...give it our fake one instead!
+          provide: ReceiptsService,
+          useValue: mockReceiptsService,
         },
       ],
     }).compile();

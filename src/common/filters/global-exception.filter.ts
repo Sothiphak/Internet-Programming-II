@@ -5,20 +5,18 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Request, Response } from 'express'; // <-- Added explicit Express types
+import { Request, Response } from 'express';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
-    // Explicitly tell TypeScript these are Express Requests and Responses
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Internal server error';
 
-    // 1. Handle standard NestJS HTTP Exceptions
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const responseBody = exception.getResponse();
@@ -29,10 +27,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         const parsedBody = responseBody as { message?: string | string[] };
         message = parsedBody.message || 'Http Error';
       }
-    }
-    // 2. Catch ugly TypeORM / PostgreSQL Errors
-    else if (exception instanceof Error) {
-      // Safely check for Postgres error codes without using 'any'
+    } else if (exception instanceof Error) {
       const dbError = exception as Error & { code?: string };
       if (dbError.code === '22P02' || exception.message.includes('uuid')) {
         status = HttpStatus.BAD_REQUEST;
